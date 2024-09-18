@@ -6,13 +6,46 @@ use Illuminate\Database\Eloquent\Model;
 
 class UzumbankTransaction extends Model
 {
-    const STATUS_FAILED = -1;
-    const STATUS_CREATED = 0;
-    const STATUS_CONFIRMED = 1;
+    const STATUS_FAILED = 'FAILED';
+    const STATUS_CREATED = 'CREATED';
+    const STATUS_CONFIRMED = 'CONFIRMED';
+    const STATUS_REVERSED = 'REVERSED';
 
     protected $table = 'uzumbank_transactions';
 
-    protected $fillable = [
-        'name',
+    protected $casts = [
+        'params' => 'array',
+        'failed_at' => 'datetime',
+        'confirmed_at' => 'datetime',
+        'reversed_at' => 'datetime',
     ];
+
+    protected $fillable = [
+        'status', 'failed_at', 'confirmed_at', 'params',
+    ];
+
+    public function payable()
+    {
+        return $this->morphTo();
+    }
+
+    public function isCreated()
+    {
+        return $this->status === self::STATUS_CREATED;
+    }
+
+    public function isConfirmed()
+    {
+        return $this->status === self::STATUS_CONFIRMED;
+    }
+
+    public function isFailed()
+    {
+        return $this->status === self::STATUS_FAILED;
+    }
+
+    public function isReversed()
+    {
+        return $this->status === self::STATUS_REVERSED;
+    }
 }

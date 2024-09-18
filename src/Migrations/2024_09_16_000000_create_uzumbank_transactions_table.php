@@ -15,9 +15,19 @@ class CreateUzumbankTransactionsTable extends Migration
     {
         Schema::create('uzumbank_transactions', function (Blueprint $table) {
             $table->id();
-            $table->tinyInteger('status')->default(0);
+            $table->bigInteger('uzumbank_service_id')->nullable();
+            $table->string('uzumbank_trans_id')->nullable();
+            $table->bigInteger('uzumbank_timestamp')->nullable();
+            $table->bigInteger('uzumbank_amount')->nullable();
+            $table->string('uzumbank_payment_source')->nullable();
+            $table->string('uzumbank_tariff')->nullable();
+            $table->string('uzumbank_processing_reference_number')->nullable();
+            $table->string('status')->nullable();
             $table->timestamp('failed_at')->nullable();
             $table->timestamp('confirmed_at')->nullable();
+            $table->timestamp('reversed_at')->nullable();
+            $table->mediumText('params')->nullable();
+            $table->morphs('payable');
             $table->timestamps();
         });
     }

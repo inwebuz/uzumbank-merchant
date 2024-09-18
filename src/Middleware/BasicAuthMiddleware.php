@@ -3,6 +3,7 @@
 namespace Inwebuz\UzumbankMerchant\Middleware;
 
 use Closure;
+use Inwebuz\UzumbankMerchant\Services\UzumbankMerchant;
 
 class BasicAuthMiddleware
 {
@@ -13,7 +14,12 @@ class BasicAuthMiddleware
 
         // Perform basic auth check
         if (empty($login) || empty($password) || $request->getUser() !== $login || $request->getPassword() !== $password) {
-            return response('Unauthorized', 401, ['WWW-Authenticate' => 'Basic']);
+            return response()->json([
+                'serviceId' => $request->input('serviceId'),
+                'timestamp' => $request->input('timestamp'),
+                'status' => 'FAILED',
+                'errorCode' => UzumbankMerchant::ERROR_AUTH_FAILED,
+            ], 401);
         }
 
         return $next($request);

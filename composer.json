@@ -1,0 +1,22 @@
+{
+    "name": "inwebuz/uzumbank-merchant",
+    "description": "Integeration with Uzumbank Merchant for Laravel",
+    "type": "library",
+    "license": "MIT",
+    "autoload": {
+        "psr-4": {
+            "Inwebuz\\UzumbankMerchant\\": "src/"
+        }
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "Inwebuz\\UzumbankMerchant\\UzumbankMerchantServiceProvider"
+            ]
+        }
+    },
+    "require": {
+        "php": "^8.1",
+        "illuminate/support": "^10.48"
+    }
+}

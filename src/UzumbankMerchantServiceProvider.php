@@ -20,7 +20,7 @@ class UzumbankMerchantServiceProvider extends ServiceProvider
         if ($this->app->runningInConsole()) {
             $this->publishes([
                 __DIR__ . '/Migrations' => database_path('migrations')
-            ], 'migrations');
+            ], 'uzumbankmerchant');
         }
 
         // Load package routes

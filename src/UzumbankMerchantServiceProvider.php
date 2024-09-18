@@ -16,6 +16,13 @@ class UzumbankMerchantServiceProvider extends ServiceProvider
         // Publish package migrations
         $this->loadMigrationsFrom(__DIR__ . '/Migrations');
 
+        // Publish migrations
+        if ($this->app->runningInConsole()) {
+            $this->publishes([
+                __DIR__ . '/Migrations' => database_path('migrations')
+            ], 'migrations');
+        }
+
         // Load package routes
         $this->loadRoutesFrom(__DIR__ . '/routes/web.php');
 

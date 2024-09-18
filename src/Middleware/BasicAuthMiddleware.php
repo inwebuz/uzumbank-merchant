@@ -12,7 +12,7 @@ class BasicAuthMiddleware
         $password = config('uzumbankmerchant.auth.password');
 
         // Perform basic auth check
-        if ($request->getUser() !== $login || $request->getPassword() !== $password) {
+        if (empty($login) || empty($password) || $request->getUser() !== $login || $request->getPassword() !== $password) {
             return response('Unauthorized', 401, ['WWW-Authenticate' => 'Basic']);
         }
 

@@ -19,7 +19,7 @@ class UzumbankMerchantController extends Controller
     public function check()
     {
         $serviceId = $this->request->input('serviceId');
-        if (empty($serviceId) || config('uzumbankmerchant.service_id') !== $serviceId) {
+        if (!$this->isServiceIdValid($serviceId)) {
             return $this->checkError(UzumbankMerchant::ERROR_INCORRECT_SERVICE_ID);
         }
         $timestamp = $this->request->input('timestamp');
@@ -48,7 +48,7 @@ class UzumbankMerchantController extends Controller
     public function create()
     {
         $serviceId = $this->request->input('serviceId');
-        if (empty($serviceId) || config('uzumbankmerchant.service_id') !== $serviceId) {
+        if (!$this->isServiceIdValid($serviceId)) {
             return $this->createError(UzumbankMerchant::ERROR_INCORRECT_SERVICE_ID);
         }
         $timestamp = $this->request->input('timestamp');
@@ -100,7 +100,7 @@ class UzumbankMerchantController extends Controller
     public function confirm()
     {
         $serviceId = $this->request->input('serviceId');
-        if (empty($serviceId) || config('uzumbankmerchant.service_id') !== $serviceId) {
+        if (!$this->isServiceIdValid($serviceId)) {
             return $this->confirmError(UzumbankMerchant::ERROR_INCORRECT_SERVICE_ID);
         }
         $timestamp = $this->request->input('timestamp');
@@ -166,7 +166,7 @@ class UzumbankMerchantController extends Controller
     public function reverse()
     {
         $serviceId = $this->request->input('serviceId');
-        if (empty($serviceId) || config('uzumbankmerchant.service_id') !== $serviceId) {
+        if (!$this->isServiceIdValid($serviceId)) {
             return $this->reverseError(UzumbankMerchant::ERROR_INCORRECT_SERVICE_ID);
         }
         $timestamp = $this->request->input('timestamp');
@@ -215,7 +215,7 @@ class UzumbankMerchantController extends Controller
     public function status()
     {
         $serviceId = $this->request->input('serviceId');
-        if (empty($serviceId) || config('uzumbankmerchant.service_id') !== $serviceId) {
+        if (!$this->isServiceIdValid($serviceId)) {
             return $this->statusError(UzumbankMerchant::ERROR_INCORRECT_SERVICE_ID);
         }
         $timestamp = $this->request->input('timestamp');
@@ -311,5 +311,10 @@ class UzumbankMerchantController extends Controller
             $payable = $payableModels[$type]::find($id);
         }
         return $payable;
+    }
+
+    private function isServiceIdValid($serviceId)
+    {
+        return config('uzumbankmerchant.service_id') == $serviceId;
     }
 }

@@ -15,26 +15,38 @@ composer require inwebuz/uzumbank-merchant
 ### Publish config and migrations
 
 ```bash
-php artisan vendor:publish --provider="Inwebuz\UzumbankMerchant\ServiceProvider"
+php artisan vendor:publish --provider=uzumbankmerchant
+```
+
+```bash
 php artisan migrate
 ```
 
-
 ### Add config
 
-Create login and password, service_id in `.env` file.
+Create login and password for Uzumbank Merchant, add service_id in `.env` file.
+
+```php
 UZUMBANK_MERCHANT_LOGIN="your_login"
 UZUMBANK_MERCHANT_PASSWORD="your_password"
 UZUMBANK_MERCHANT_SERVICE_ID="uzumbank_service_id"
+```
 
 In uzumbankmerchant.php config file write your payable models
+
 For example:
-'order' => 'App\\Models\\Order',
+
+```php
+'payable_models' => [
+    'order' => 'App\\Models\\Order',
+],
+```
+
 Where "order" is parameter name for deeplink
 
 ### Add model
 
-Create a model that implements `Inwebuz\UzumbankMerchant\Interfaces\UzumbankPayableInterface` interface.
+Create a payable model that implements `Inwebuz\UzumbankMerchant\Interfaces\UzumbankPayableInterface` interface.
 
 ```php
 <?php
@@ -61,7 +73,7 @@ interface UzumbankPayableInterface
      * Retruns info about payable and transaction
      *
      * @return array An array of key object pairs, each object contains "value" key and value of that key.
-     * 
+     *
      * Example:
      * [
      *    'type' => [
@@ -85,7 +97,7 @@ interface UzumbankPayableInterface
      * Called after transaction is successfully confirmes.
      *
      * You have to set your payable status to "paid".
-     * 
+     *
      * @return void.
      */
     public function uzumbankSetPaid(): void;
@@ -101,7 +113,7 @@ interface UzumbankPayableInterface
      * Called after transaction is successfully reversed.
      *
      * You have to set your payable status to "reversed".
-     * 
+     *
      * @return bool Returns true if payable is already paid.
      */
     public function uzumbankReverse(): void;
@@ -111,6 +123,9 @@ interface UzumbankPayableInterface
 ### Generate deeplink to Uzumbank
 
 For example:
+
 https://uzumbank.uz/uzumbank/merchant/deeplink?type=order&id=1
+
 type - type of payable model in uzumbankmerchant config payable_models key
+
 id - id of payable model

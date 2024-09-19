@@ -3,7 +3,7 @@
 namespace Inwebuz\UzumbankMerchant\Middleware;
 
 use Closure;
-use Inwebuz\UzumbankMerchant\Services\UzumbankMerchant;
+use Inwebuz\UzumbankMerchant\UzumbankMerchant;
 
 class BasicAuthMiddleware
 {

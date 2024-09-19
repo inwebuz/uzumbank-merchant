@@ -27,14 +27,14 @@ class UzumbankMerchantController extends Controller
         if (empty($params['type']) || empty($params['id'])) {
             return $this->checkError(UzumbankMerchant::ERROR_REQUIRED_PARAMS_MISSING);
         }
-        $payable = UzumbankMerchant::getPayableByParams($params);
+        $payable = $this->getPayableByParams($params);
         if (!$payable) {
             return $this->checkError(UzumbankMerchant::ERROR_PAYABLE_NOT_FOUND);
         }
-        if (method_exists($payable, 'uzumbankPaid') && $payable->uzumbankPaid()) {
+        if (method_exists($payable, 'uzumbankIsPaid') && $payable->uzumbankIsPaid()) {
             return $this->checkError(UzumbankMerchant::ERROR_ALREADY_PAID);
         }
-        if (method_exists($payable, 'uzumbankCancelled') && $payable->uzumbankCancelled()) {
+        if (method_exists($payable, 'uzumbankIsCancelled') && $payable->uzumbankIsCancelled()) {
             return $this->checkError(UzumbankMerchant::ERROR_CANCELLED);
         }
         return response()->json([
@@ -58,14 +58,14 @@ class UzumbankMerchantController extends Controller
         if (empty($transId) || empty($amount) || empty($params['type']) || empty($params['id'])) {
             return $this->createError(UzumbankMerchant::ERROR_REQUIRED_PARAMS_MISSING);
         }
-        $payable = UzumbankMerchant::getPayableByParams($params);
+        $payable = $this->getPayableByParams($params);
         if (!$payable) {
             return $this->createError(UzumbankMerchant::ERROR_PAYABLE_NOT_FOUND);
         }
-        if (method_exists($payable, 'uzumbankPaid') && $payable->uzumbankPaid()) {
+        if (method_exists($payable, 'uzumbankIsPaid') && $payable->uzumbankIsPaid()) {
             return $this->createError(UzumbankMerchant::ERROR_ALREADY_PAID);
         }
-        if (method_exists($payable, 'uzumbankCancelled') && $payable->uzumbankCancelled()) {
+        if (method_exists($payable, 'uzumbankIsCancelled') && $payable->uzumbankIsCancelled()) {
             return $this->createError(UzumbankMerchant::ERROR_CANCELLED);
         }
         if (method_exists($payable, 'uzumbankAmount') && $payable->uzumbankAmount() != $amount) {
@@ -112,14 +112,14 @@ class UzumbankMerchantController extends Controller
         if (empty($transId) || empty($params['type']) || empty($params['id'])) {
             return $this->confirmError(UzumbankMerchant::ERROR_REQUIRED_PARAMS_MISSING);
         }
-        $payable = UzumbankMerchant::getPayableByParams($params);
+        $payable = $this->getPayableByParams($params);
         if (!$payable) {
             return $this->confirmError(UzumbankMerchant::ERROR_PAYABLE_NOT_FOUND);
         }
-        if (method_exists($payable, 'uzumbankPaid') && $payable->uzumbankPaid()) {
+        if (method_exists($payable, 'uzumbankIsPaid') && $payable->uzumbankIsPaid()) {
             return $this->confirmError(UzumbankMerchant::ERROR_ALREADY_PAID);
         }
-        if (method_exists($payable, 'uzumbankCancelled') && $payable->uzumbankCancelled()) {
+        if (method_exists($payable, 'uzumbankIsCancelled') && $payable->uzumbankIsCancelled()) {
             return $this->confirmError(UzumbankMerchant::ERROR_CANCELLED);
         }
         $uzumbankTransaction = UzumbankTransaction::where('uzumbank_service_id', $serviceId)->where('uzumbank_trans_id', $transId)->first();
@@ -299,5 +299,17 @@ class UzumbankMerchantController extends Controller
             'reverseTime' => $reverseTime,
             'errorCode' => $errorCode,
         ], 400);
+    }
+
+    private function getPayableByParams($params)
+    {
+        $payable = null;
+        $type = $params['type'] ?? null;
+        $id = $params['id'] ?? null;
+        $payableModels = config('uzumbankmerchant.payable_models');
+        if ($type && isset($payableModels[$type]) && class_exists($payableModels[$type]) && $payableModels[$type] instanceof \Illuminate\Database\Eloquent\Model) {
+            $payable = $payableModels[$type]::find($id);
+        }
+        return $payable;
     }
 }

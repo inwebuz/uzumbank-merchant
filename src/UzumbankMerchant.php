@@ -25,16 +25,4 @@ class UzumbankMerchant
     const ERROR_TRANSACTION_CANNOT_BE_REVERSED = 10017; // Невозможно отменить транзакцию 	
     const ERROR_TRANSACTION_ALREADY_REVERSED = 10018; // Транзакция с идентификатором transId уже отменена 	
     const ERROR_OTHER = 99999; // Ошибка проверки данных 	Сервис недоступен, повторите попытку позже
-
-    public static function getPayableByParams($params)
-    {
-        $payable = null;
-        $type = $params['type'] ?? null;
-        $id = $params['id'] ?? null;
-        $payableModels = config('uzumbankmerchant.payable_models');
-        if ($type && isset($payableModels[$type]) && class_exists($payableModels[$type]) && $payableModels[$type] instanceof \Illuminate\Database\Eloquent\Model) {
-            $payable = $payableModels[$type]::find($id);
-        }
-        return $payable;
-    }
 }

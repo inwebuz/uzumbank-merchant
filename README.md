@@ -15,7 +15,7 @@ composer require inwebuz/uzumbank-merchant
 ### Publish config and migrations
 
 ```bash
-php artisan vendor:publish --provider=uzumbankmerchant
+php artisan vendor:publish --tag=uzumbankmerchant
 ```
 
 ```bash

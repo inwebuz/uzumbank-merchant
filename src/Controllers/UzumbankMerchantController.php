@@ -5,6 +5,7 @@ namespace Inwebuz\UzumbankMerchant\Controllers;
 use Inwebuz\UzumbankMerchant\Models\UzumbankTransaction;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
+use Illuminate\Support\Facades\Log;
 use Inwebuz\UzumbankMerchant\UzumbankMerchant;
 
 class UzumbankMerchantController extends Controller
@@ -68,7 +69,7 @@ class UzumbankMerchantController extends Controller
         if (method_exists($payable, 'uzumbankIsCancelled') && $payable->uzumbankIsCancelled()) {
             return $this->createError(UzumbankMerchant::ERROR_CANCELLED);
         }
-        if (method_exists($payable, 'uzumbankAmount') && $payable->uzumbankAmount() != $amount) {
+        if (method_exists($payable, 'uzumbankAmount') && $payable->uzumbankAmount() > 0 && $payable->uzumbankAmount() != $amount) {
             return $this->createError(UzumbankMerchant::ERROR_INCORRECT_AMOUNT);
         }
         $uzumbankTransaction = UzumbankTransaction::where('uzumbank_service_id', $serviceId)->where('uzumbank_trans_id', $transId)->first();
@@ -105,33 +106,17 @@ class UzumbankMerchantController extends Controller
         }
         $timestamp = $this->request->input('timestamp');
         $transId = $this->request->input('transId');
-        $params = $this->request->input('params', []);
         $paymentSource = $this->request->input('paymentSource');
         $tariff = $this->request->input('tariff');
         $processingReferenceNumber = $this->request->input('processingReferenceNumber');
-        if (empty($transId) || empty($params['type']) || empty($params['id'])) {
+        if (empty($transId)) {
             return $this->confirmError(UzumbankMerchant::ERROR_REQUIRED_PARAMS_MISSING);
-        }
-        $payable = $this->getPayableByParams($params);
-        if (!$payable) {
-            return $this->confirmError(UzumbankMerchant::ERROR_PAYABLE_NOT_FOUND);
-        }
-        if (method_exists($payable, 'uzumbankIsPaid') && $payable->uzumbankIsPaid()) {
-            return $this->confirmError(UzumbankMerchant::ERROR_ALREADY_PAID);
-        }
-        if (method_exists($payable, 'uzumbankIsCancelled') && $payable->uzumbankIsCancelled()) {
-            return $this->confirmError(UzumbankMerchant::ERROR_CANCELLED);
         }
         $uzumbankTransaction = UzumbankTransaction::where('uzumbank_service_id', $serviceId)->where('uzumbank_trans_id', $transId)->first();
         if (!$uzumbankTransaction) {
             return $this->confirmError(UzumbankMerchant::ERROR_TRANSACTION_NOT_FOUND);
         }
-        if ($uzumbankTransaction->isConfirmed()) {
-            return $this->confirmError(UzumbankMerchant::ERROR_TRANSACTION_ALREADY_CONFIRMED, $uzumbankTransaction->confirmed_at->getTimestampMs());
-        }
-        if ($uzumbankTransaction->isCancelled()) {
-            return $this->confirmError(UzumbankMerchant::ERROR_TRANSACTION_CANCELLED);
-        }
+
         $now = now();
         if ($uzumbankTransaction->created_at->diffInMinutes($now) >= config('uzumbankmerchant.confirm_timeout_in_minutes')) {
             $uzumbankTransaction->status = UzumbankTransaction::STATUS_FAILED;
@@ -139,11 +124,28 @@ class UzumbankMerchantController extends Controller
             $uzumbankTransaction->save();
             return $this->confirmError(UzumbankMerchant::ERROR_TRANSACTION_CANCELLED);
         }
+        if ($uzumbankTransaction->isCancelled()) { // failed or reversed
+            return $this->confirmError(UzumbankMerchant::ERROR_TRANSACTION_CANCELLED);
+        }
+        if ($uzumbankTransaction->isConfirmed()) {
+            return $this->confirmError(UzumbankMerchant::ERROR_TRANSACTION_ALREADY_CONFIRMED, $uzumbankTransaction->confirmed_at->getTimestampMs());
+        }
+
+        $payable = $uzumbankTransaction->payable;
+        if (!$payable) {
+            return $this->createError(UzumbankMerchant::ERROR_PAYABLE_NOT_FOUND);
+        }
+        if (method_exists($payable, 'uzumbankIsPaid') && $payable->uzumbankIsPaid()) {
+            return $this->createError(UzumbankMerchant::ERROR_ALREADY_PAID);
+        }
+        if (method_exists($payable, 'uzumbankIsCancelled') && $payable->uzumbankIsCancelled()) {
+            return $this->createError(UzumbankMerchant::ERROR_CANCELLED);
+        }
+        if (method_exists($payable, 'uzumbankAmount') && $payable->uzumbankAmount() > 0 && $payable->uzumbankAmount() != $uzumbankTransaction->uzumbank_amount) {
+            return $this->createError(UzumbankMerchant::ERROR_INCORRECT_AMOUNT);
+        }
 
         // confirm
-        if (method_exists($payable, 'uzumbankSetPaid')) {
-            $payable->uzumbankSetPaid();
-        }
         $uzumbankTransaction->update([
             'uzumbank_timestamp' => $timestamp,
             'uzumbank_payment_source' => $paymentSource,
@@ -152,6 +154,9 @@ class UzumbankMerchantController extends Controller
             'status' => UzumbankTransaction::STATUS_CONFIRMED,
             'confirmed_at' => $now,
         ]);
+        if (method_exists($payable, 'uzumbankSetPaid')) {
+            $payable->uzumbankSetPaid($uzumbankTransaction);
+        }
 
         return response()->json([
             'serviceId' => $serviceId,
@@ -183,7 +188,7 @@ class UzumbankMerchantController extends Controller
         if (!$payable) {
             return $this->reverseError(UzumbankMerchant::ERROR_PAYABLE_NOT_FOUND);
         }
-        if (method_exists($payable, 'uzumbankCanBeReversed') && !$payable->uzumbankCanBeReversed()) {
+        if (method_exists($payable, 'uzumbankCanBeReversed') && !$payable->uzumbankCanBeReversed($uzumbankTransaction)) {
             return $this->reverseError(UzumbankMerchant::ERROR_TRANSACTION_CANNOT_BE_REVERSED);
         }
         if ($uzumbankTransaction->isReversed()) {
@@ -194,7 +199,7 @@ class UzumbankMerchantController extends Controller
 
         // reverse / cancel
         if (method_exists($payable, 'uzumbankReverse')) {
-            $payable->uzumbankReverse();
+            $payable->uzumbankReverse($uzumbankTransaction);
         }
         $uzumbankTransaction->update([
             'uzumbank_timestamp' => $timestamp,
@@ -307,7 +312,7 @@ class UzumbankMerchantController extends Controller
         $type = $params['type'] ?? null;
         $id = $params['id'] ?? null;
         $payableModels = config('uzumbankmerchant.payable_models');
-        if ($type && isset($payableModels[$type]) && class_exists($payableModels[$type]) && $payableModels[$type] instanceof \Illuminate\Database\Eloquent\Model) {
+        if ($type && isset($payableModels[$type]) && class_exists($payableModels[$type]) && is_subclass_of($payableModels[$type], \Illuminate\Database\Eloquent\Model::class)) {
             $payable = $payableModels[$type]::find($id);
         }
         return $payable;

@@ -20,9 +20,7 @@ class UzumbankTransaction extends Model
         'reversed_at' => 'datetime',
     ];
 
-    protected $fillable = [
-        'status', 'failed_at', 'confirmed_at', 'params',
-    ];
+    protected $guarded = [];
 
     public function payable()
     {
@@ -47,5 +45,10 @@ class UzumbankTransaction extends Model
     public function isReversed()
     {
         return $this->status === self::STATUS_REVERSED;
+    }
+
+    public function isCancelled()
+    {
+        return $this->isFailed() || $this->isReversed();
     }
 }

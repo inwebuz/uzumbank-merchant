@@ -129,7 +129,7 @@ interface UzumbankPayableInterface
 
 For example:
 
-https://uzumbank.uz/uzumbank/merchant/deeplink?type=order&id=1
+https://www.uzumbank.uz/open-service?serviceId=498619073&type=order&id=9932&amount=100000
 
 type - type of payable model in uzumbankmerchant config payable_models key
 
